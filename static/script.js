@@ -16,7 +16,8 @@ form.addEventListener("submit", async (event) => {
         <div>
             <h2>${result.customer_name}</h2>
             <p><strong>Challenge:</strong> ${result.challenge}</p>
-            <p><strong>Results:</strong> ${result.results.join(", ")}</p>
+            <p><strong>Ähnlichkeit:</strong> ${result.similarity}</p>
+            <p><strong>Kategorie:</strong> ${result.categorie}</p>
             <a href="${result.url}">Mehr erfahren</a>
         </div>
     `).join("");

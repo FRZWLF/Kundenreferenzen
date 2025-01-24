@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
 import requests
-
 from mongoDB import save_to_db
 
 url = "https://www.intershop.com/en/customers-details"
@@ -49,6 +48,13 @@ def scrap_customer_data():
                 results.append(li)
         except:
             print(f"Keine Results gefunden für: {customer}")
+
+        # #Keywords
+        # all_keywords = []
+        # for challenge in challenges:
+        #     all_keywords.extend(extract_keywords(challenge))
+        #
+        # unique_keywords = list(set(all_keywords))
 
         #Daten erstellen
         customer_data = {
