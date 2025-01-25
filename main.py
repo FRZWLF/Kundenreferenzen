@@ -117,6 +117,24 @@ def search_references():
     # return jsonify(results)
 
 
+@app.route("/categories", methods=["GET"])
+def get_categories_data():
+    """
+    Liefert die Anzahl der Kundenreferenzen pro Kategorie als JSON.
+    """
+    # Zähle die Anzahl der Referenzen pro Kategorie
+    pipeline = [
+        {"$unwind": "$categories"},
+        {"$group": {"_id": "$categories", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    data = list(collection.aggregate(pipeline))
+
+    # Formatieren für das Frontend
+    result = [{"category": item["_id"], "count": item["count"]} for item in data]
+    return jsonify(result)
+
+
 
 if __name__ == "__main__":
     #scrap_customer_data()

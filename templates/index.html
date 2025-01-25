@@ -7,16 +7,31 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Kundenreferenzen</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Kundenreferenzen suchen</h1>
-    <form id="search">
-        <label for="challenge">Herausforderung:</label>
-        <input type="text" id="challenge" name="challenge" required>
-        <button type="submit">Suchen</button>
-    </form>
+    <div class="top">
+        <h1>Kundenreferenzen suchen</h1>
+        <form id="search">
+            <div class="input-box">
+                <input type="text" id="challenge" placeholder="Herausforderung suchen" name="challenge" required>
+                <button type="submit">Suchen</button>
+            </div>
+        </form>
+    </div>
+    <div class="tabs">
+        <button onclick="showTab('results')">Kundenreferenzen</button>
+        <button onclick="showTab('solutions')">Lösungen</button>
+        <button onclick="showTab('visuals')">Kategorien</button>
+    </div>
 
-    <div id="results"></div>
+    <div class="main-content">
+        <div id="results" class="tab-content"></div>
+        <div id="solutions" class="tab-content" style="display: none;"></div>
+        <div id="visuals" class="tab-content" style="display: none;">
+            <canvas id="challengeChart"></canvas>
+        </div>
+    </div>
 
     <script src="/static/script.js"></script>
 </body>
