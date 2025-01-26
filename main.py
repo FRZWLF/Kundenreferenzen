@@ -47,34 +47,39 @@ def extract_phrases(user_input):
     return phrases
 
 
-def match_challenges_with_embeddings(user_input):
+def match_challenges_with_embeddings(user_input, data, selected_category, similarity_threshold):
     """
     Berechnet die Ähnlichkeit zwischen der Nutzereingabe und den gespeicherten Challenges.
     """
     # Berechne das Embedding der Nutzereingabe
     user_embedding = model.encode(user_input, convert_to_tensor=True)
 
-    # Alle Dokumente durchlaufen und Ähnlichkeit berechnen
     results = []
-    for doc in collection.find():
-        challenge_embeddings = doc.get("embeddings", [])
-        challenges = doc.get("challenges", [])
-        if not challenge_embeddings or not challenges:
+    for entry in data:
+        challenges = entry.get("challenges", [])
+        categories = entry.get("categories", [])
+        embeddings = entry.get("embeddings", [])
+
+        if selected_category:
+            filtered_indices = [i for i, category in enumerate(categories) if category == selected_category]
+            challenges = [challenges[i] for i in filtered_indices]
+            embeddings = [embeddings[i] for i in filtered_indices]
+            categories = [categories[i] for i in filtered_indices]
+
+        if not challenges or not embeddings:
             continue
 
         # Ähnlichkeit berechnen
-        similarity_scores = util.cos_sim(user_embedding, challenge_embeddings)
-        max_similarity_idx = similarity_scores[0].argmax().item()
-        max_similarity = similarity_scores[0][max_similarity_idx].item()
-
-        if max_similarity > 0.35:  # Threshold für Relevanz
-            results.append({
-                "customer_name": doc["customer_name"],
-                "challenge": challenges[max_similarity_idx],
-                "similarity": round(max_similarity, 2),
-                "categorie": doc["categories"][max_similarity_idx],
-                "url": doc.get("customer_url", "N/A")
-            })
+        similarity_scores = util.cos_sim(user_embedding, embeddings)
+        for idx, score in enumerate(similarity_scores[0]):
+            if score > similarity_threshold:  # Threshold für Relevanz
+                results.append({
+                    "customer_name": entry["customer_name"],
+                    "challenge": challenges[idx],
+                    "similarity": round(score.item(), 2),
+                    "categorie": categories[idx],
+                    "url": entry.get("customer_url", "N/A")
+                })
 
     # Ergebnisse nach Ähnlichkeit sortieren
     results = sorted(results, key=lambda x: x["similarity"], reverse=True)
@@ -85,8 +90,12 @@ def match_challenges_with_embeddings(user_input):
 def search_references():
     data = request.json
     user_input = data.get("challenge", "").lower()
+    selected_category = data.get("category", "")
+    similarity_threshold = float(data.get("similarity", 0.35))
 
-    matched_challenges = match_challenges_with_embeddings(user_input)
+    data = list(collection.find())
+
+    matched_challenges = match_challenges_with_embeddings(user_input, data, selected_category, similarity_threshold)
 
     for match in matched_challenges:
         print(f"Kunde: {match['customer_name']}, Ähnlichkeit: {match['similarity']:.2f}, Hit: {match['challenge']}, URL: {match['url']}")

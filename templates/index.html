@@ -15,21 +15,61 @@
         <form id="search">
             <div class="input-box">
                 <input type="text" id="challenge" placeholder="Herausforderung suchen" name="challenge" required>
-                <button type="submit">Suchen</button>
+                <button type="submit" id="search-btn">Suchen</button>
             </div>
         </form>
     </div>
     <div class="tabs">
-        <button onclick="showTab('results')">Kundenreferenzen</button>
-        <button onclick="showTab('solutions')">Lösungen</button>
-        <button onclick="showTab('visuals')">Kategorien</button>
+        <button id="tab-results" class="active" onclick="showTab('results')">Kundenreferenzen</button>
+        <button id="tab-solutions" onclick="showTab('solutions')">Lösungen</button>
+        <button id="tab-visuals" onclick="showTab('visuals')">Kategorien</button>
     </div>
 
-    <div class="main-content">
-        <div id="results" class="tab-content"></div>
-        <div id="solutions" class="tab-content" style="display: none;"></div>
-        <div id="visuals" class="tab-content" style="display: none;">
-            <canvas id="challengeChart"></canvas>
+    <div class="main">
+        <form id="filter">
+            <h2>Filter</h2>
+            <label for="category-filter">Kategorie wählen:</label>
+            <select id="category-filter" class="dropdown-select">
+                <option value="">Alle Kategorien</option>
+                <option value="Customer Experience">Customer Experience</option>
+                <option value="E-Commerce Optimization"> E-Commerce Optimization</option>
+                <option value="Omnichannel Solutions"> Omnichannel Solutions</option>
+                <option value="Digital Transformation">Digital Transformation</option>
+                <option value="Product Data Management">Product Data Management</option>
+                <option value="Internationalization">Internationalization</option>
+                <option value="Pricing and Revenue">Pricing and Revenue</option>
+                <option value="Operational Efficiency">Operational Efficiency</option>
+            </select>
+
+            <label for="similarity-filter">Ähnlichkeit wählen:</label>
+            <div class="range">
+                <div class="range-wrapper">
+                    <span>0.0</span>
+                    <input
+                            type="range"
+                            id="similarity-filter"
+                            min="0.0"
+                            max="1.0"
+                            step="0.01"
+                            value="0.35"
+                    >
+                    <span>1.0</span>
+                </div>
+                <div class="range-value">
+                    <span id="range-display">0.35</span>
+                </div>
+            </div>
+            <div class="button-box">
+                <button type="submit" id="filter-btn">Filter anwenden</button>
+                <div id="revert-filter" onclick="resetFilters()">Filter zurücksetzen</div>
+            </div>
+        </form>
+        <div class="main-content">
+            <div id="results" class="tab-content"></div>
+            <div id="solutions" class="tab-content" style="display: none;"></div>
+            <div id="visuals" class="tab-content" style="display: none;">
+                <canvas id="challengeChart"></canvas>
+            </div>
         </div>
     </div>
 
