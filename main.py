@@ -1,25 +1,13 @@
-import re
-import spacy
-from pymongo import MongoClient
-from sentence_transformers import SentenceTransformer, util
-from scrap_data import scrap_customer_data
+from sentence_transformers import util
+from clustering import save_challenge_categories_to_db
+from mongoDB import generate_embeddings_for_field, setup_db
+from scrap_data import scrap_customer_data, scrap_product_data
 from flask import Flask, render_template, request, jsonify
+
+from shared import model, db, client
 
 #Flask initialisieren
 app = Flask(__name__)
-
-#semantische Analyse
-#model = SentenceTransformer('all-MiniLM-L6-v2')
-#model = SentenceTransformer('all-MPNet-base-v2')
-#Multilingual
-model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
-
-nlp = spacy.load("en_core_web_sm")
-
-# Verbindung herstellen
-client = MongoClient("mongodb://localhost:27017/")
-db = client["intershop"]
-collection = db["customers"]
 
 
 @app.route('/')
@@ -27,24 +15,24 @@ def index():
     return render_template('index.html')
 
 
-def extract_phrases(user_input):
-    """
-    Extrahiert relevante Phrasen aus der Nutzereingabe.
-    """
-    doc = nlp(user_input.lower())  # Eingabe zu Kleinbuchstaben konvertieren
-    phrases = []
-
-    # Wichtige Wortarten (NOUN, ADJ) kombinieren
-    for token in doc:
-        if token.pos_ in {"NOUN", "ADJ"} and not token.is_stop:  # Relevante Wörter
-            phrases.append(token.text)
-
-    # Phrasen kombinieren
-    if len(phrases) > 1:
-        combined_phrases = [" ".join(phrases[i:i+2]) for i in range(len(phrases) - 1)]
-        print(f"Combined Phrases: {combined_phrases}")
-        return combined_phrases
-    return phrases
+# def extract_phrases(user_input):
+#     """
+#     Extrahiert relevante Phrasen aus der Nutzereingabe.
+#     """
+#     doc = nlp(user_input.lower())  # Eingabe zu Kleinbuchstaben konvertieren
+#     phrases = []
+#
+#     # Wichtige Wortarten (NOUN, ADJ) kombinieren
+#     for token in doc:
+#         if token.pos_ in {"NOUN", "ADJ"} and not token.is_stop:  # Relevante Wörter
+#             phrases.append(token.text)
+#
+#     # Phrasen kombinieren
+#     if len(phrases) > 1:
+#         combined_phrases = [" ".join(phrases[i:i+2]) for i in range(len(phrases) - 1)]
+#         print(f"Combined Phrases: {combined_phrases}")
+#         return combined_phrases
+#     return phrases
 
 
 def match_challenges_with_embeddings(user_input, data, selected_category, similarity_threshold):
@@ -92,6 +80,7 @@ def search_references():
     user_input = data.get("challenge", "").lower()
     selected_category = data.get("category", "")
     similarity_threshold = float(data.get("similarity", 0.35))
+    collection = db["customers"]
 
     data = list(collection.find())
 
@@ -125,6 +114,45 @@ def search_references():
     #
     # return jsonify(results)
 
+def match_solutions_with_embeddings(input, data):
+    user_embedding = model.encode(input, convert_to_tensor=True)
+
+    results = []
+    for entry in data:
+        descriptions = entry.get("description", [])
+        embeddings = entry.get("embeddings", [])
+
+        # Ähnlichkeit berechnen
+        similarity_scores = util.cos_sim(user_embedding, embeddings)
+        for idx, score in enumerate(similarity_scores[0]):
+            if score > 0.35:  # Threshold für Relevanz
+                results.append({
+                    "product_name": entry["product_name"],
+                    "description": descriptions,
+                    "similarity": round(score.item(), 2),
+                    "url": entry.get("product_url", "N/A")
+                })
+
+    # Ergebnisse nach Ähnlichkeit sortieren
+    results = sorted(results, key=lambda x: x["similarity"], reverse=True)
+    return results
+
+
+@app.route("/solutions", methods=["POST"])
+def search_solutions():
+    data = request.json
+    user_input = data.get("challenge", "").lower()
+    collection = db["products"]
+
+    data = list(collection.find())
+
+    matched_solutions = match_solutions_with_embeddings(user_input, data)
+
+    for match in matched_solutions:
+        print(f"Product: {match['product_name']}, Ähnlichkeit: {match['similarity']:.2f}, Hit: {match['description']}, URL: {match['url']}")
+
+    return jsonify(matched_solutions)
+
 
 @app.route("/categories", methods=["GET"])
 def get_categories_data():
@@ -137,22 +165,36 @@ def get_categories_data():
         {"$group": {"_id": "$categories", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}}
     ]
+    collection = db["customers"]
     data = list(collection.aggregate(pipeline))
 
     # Formatieren für das Frontend
     result = [{"category": item["_id"], "count": item["count"]} for item in data]
     return jsonify(result)
 
+def is_db_initialized(collection_name):
+    return db[collection_name].estimated_document_count() > 0
 
 
 if __name__ == "__main__":
-    #scrap_customer_data()
-    # generate_embeddings_for_challenges()
-    app.run(debug=True)
+    #Initialer Setup beim erstmaligem Ausführen
+    if not is_db_initialized("products") or not is_db_initialized("customers"):
+        print("Initialisiere die Datenbank...")
+        setup_db("products")
+        setup_db("customers")
+        scrap_product_data()
+        scrap_customer_data()
+        generate_embeddings_for_field("products", "description")
+        generate_embeddings_for_field("customers", "challenges")
+        save_challenge_categories_to_db()
+    else:
+        print("Datenbank bereits initialisiert. Starte nur die App...")
 
     try:
-        app.run(debug=True)
+        print("Starte die Anwendung.")
+        app.run(debug=True, use_reloader=False)
+    except KeyboardInterrupt:
+        print("Beende die Anwendung")
     finally:
-        # Verbindung schließen
         client.close()
         print("Verbindung zur MongoDB geschlossen.")

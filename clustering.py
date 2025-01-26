@@ -1,7 +1,7 @@
-from sentence_transformers import util, SentenceTransformer
-from mongoDB import collection
+from sentence_transformers import util
+from shared import db, model
 
-model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+collection = db["customers"]
 
 categories = {
     "Customer Experience": "Improving customer satisfaction, loyalty, and retention.",
@@ -46,12 +46,3 @@ def save_challenge_categories_to_db():
             {"$set": {"categories": categories}}
         )
         print(f"Kategorien für {customer['customer_name']} erfolgreich gespeichert.")
-
-
-
-if __name__ == "__main__":
-    # Felder direkt entfernen
-    result = collection.update_many({}, {"$unset": {"cluster_id": "", "cluster_name": ""}})
-    print(f"{result.modified_count} Dokumente wurden aktualisiert.")
-    save_challenge_categories_to_db()
-    print("Cluster erfolgreich generiert und in der Datenbank gespeichert.")

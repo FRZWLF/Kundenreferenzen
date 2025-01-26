@@ -65,10 +65,10 @@ function resetFilters() {
         return;
     }
 
-    fetchAndDisplay(challenge)
+    fetchAndDisplayReferences(challenge)
 }
 
-async function fetchAndDisplay(challenge="", category="", similarity= 0.35) {
+async function fetchAndDisplayReferences(challenge="", category="", similarity= 0.35) {
     try {
         const response = await fetch("/search", {
             method: "POST",
@@ -108,6 +108,45 @@ async function fetchAndDisplay(challenge="", category="", similarity= 0.35) {
 }
 
 
+async function fetchAndDisplaySolutions(challenge="") {
+    try {
+        const response = await fetch("/solutions", {
+            method: "POST",
+            headers: {"Content-Type": "application/json" },
+            body: JSON.stringify({ challenge }),
+        });
+
+        const result = await response.json()
+        const resultdiv = document.getElementById("solutions")
+        if (!result || !Array.isArray(result) || result.length === 0) {
+            resultdiv.innerHTML = `
+                <div class="empty">
+                    <h2>Keine Lösungen für die Suchanfrage gefunden.</h2>
+                    <p>Passe deine Suche an, um Produktvorschläge zu erhalten.</p>
+                </div>
+            `;
+        } else {
+            resultdiv.innerHTML = result.map(result => `
+                <div class="customer">
+                    <h2>${result.product_name}</h2>
+                    <div class="box-content">
+                        <div>
+                            <p><strong>Beschreibung:</strong><br> <span class="value">${result.description}</span></p>
+                        </div>
+                        <div>
+                            <p><strong>Ähnlichkeit:</strong> ${result.similarity}</p>
+                        </div>
+                    </div>
+                    <a href="${result.url}">Mehr erfahren</a>
+                </div>
+            `).join("");
+        }
+    } catch (error) {
+        console.error("Fehler beim Abrufen der Ergebnisse:", error);
+    }
+}
+
+
 rangeInput.addEventListener('input', () => {
     rangeDisplay.textContent = parseFloat(rangeInput.value).toFixed(2);
 });
@@ -122,7 +161,7 @@ filter.addEventListener("submit", async (event) => {
         return;
     }
 
-    fetchAndDisplay(challenge, selectedCategory, selectedSimilarity);
+    fetchAndDisplayReferences(challenge, selectedCategory, selectedSimilarity);
 });
 
 
@@ -131,7 +170,8 @@ form.addEventListener("submit", async (event) => {
     const challenge = document.getElementById("challenge").value;
     const { selectedCategory, selectedSimilarity } = getFilterValues();
 
-    fetchAndDisplay(challenge, selectedCategory, selectedSimilarity);
+    fetchAndDisplayReferences(challenge, selectedCategory, selectedSimilarity);
+    fetchAndDisplaySolutions(challenge)
     showTab('results')
 });
 
@@ -142,7 +182,7 @@ async function fetchCategoryData() {
     return data;
 }
 
-
+let chartInstance;
 async function createChart() {
     const data = await fetchCategoryData();
 
@@ -152,7 +192,10 @@ async function createChart() {
 
     //Chart generieren
     const ctx = document.getElementById("challengeChart").getContext("2d")
-    new Chart(ctx, {
+    if (chartInstance) {
+        chartInstance.destroy();
+    }
+    chartInstance = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
@@ -166,6 +209,7 @@ async function createChart() {
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     display: true,
@@ -181,5 +225,8 @@ async function createChart() {
     });
 }
 
-// Diagramm erstellen
 createChart();
+
+window.addEventListener('resize', () => {
+    chartInstance.resize();
+});

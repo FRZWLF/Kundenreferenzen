@@ -2,9 +2,9 @@ from bs4 import BeautifulSoup
 import requests
 from mongoDB import save_to_db
 
-url = "https://www.intershop.com/en/customers-details"
 
 def scrap_customer_data():
+    url = "https://www.intershop.com/en/customers-details"
     customers_details = []
     counter = 0
     count = 0
@@ -64,8 +64,59 @@ def scrap_customer_data():
             "solutions": results
         }
 
-        save_to_db(customer_data)
+        save_to_db(customer_data, "customers")
         counter += 1
 
     print(f"Gespeicherte Kunden: {counter}/{count}")
+    print("Scrapping abgeschlossen")
+
+
+def scrap_product_data():
+    url = "https://www.intershop.com/en/e-commerce-solutions"
+    product_details = []
+    forbidden_links = ["en/contact-overview","en/request-demo"]
+    counter = 0
+    count = 0
+    res = requests.get(url)
+    #print(res)
+    soup = BeautifulSoup(res.text, 'html.parser')
+    #print(soup.prettify())
+
+    product_links = soup.find(class_="content-boxes").find_all('a')
+    for link in product_links:
+        print("https://www.intershop.com/" + link.get('href'))
+        product_details.append("https://www.intershop.com/" + link.get('href'))
+        count += 1
+
+    for l in product_details:
+        res = requests.get(l)
+        soup = BeautifulSoup(res.text, 'html.parser')
+
+        link_elements = soup.find_all(class_="linklist")
+        for linklist in link_elements:
+            if linklist.find('a').get('href').startswith("en/") and linklist.find('a').get('href') not in forbidden_links:
+                #Produktname
+                try:
+                    product = linklist.find('a').text.strip()
+                except:
+                    print(f"Fehler beim Scrappen des Products")
+
+                #Description
+                try:
+                    ce_text = linklist.find_previous(class_="ce_text")
+                    description = ce_text.find('p').find('span').text.strip()
+                except:
+                    print(f"Keine Beschreibung gefunden für: {product}")
+
+                #Daten erstellen
+                product_data = {
+                    "product_name": product,
+                    "product_url": "https://www.intershop.com/" + linklist.find('a').get('href'),
+                    "description": description,
+                }
+                #print("Zu speichernde Daten:", product_data)
+
+                save_to_db(product_data, "products")
+                counter += 1
+
     print("Scrapping abgeschlossen")
