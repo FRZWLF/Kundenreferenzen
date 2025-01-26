@@ -6,6 +6,7 @@ from sentence_transformers import SentenceTransformer
 #semantische Analyse
 #model = SentenceTransformer('all-MiniLM-L6-v2')
 #model = SentenceTransformer('all-MPNet-base-v2')
+
 #Multilingual wegen Eingabe DE -> DB-Challenges EN
 model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 

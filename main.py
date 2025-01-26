@@ -39,7 +39,7 @@ def match_challenges_with_embeddings(user_input, data, selected_category, simila
     """
     Berechnet die Ähnlichkeit zwischen der Nutzereingabe und den gespeicherten Challenges.
     """
-    # Berechne das Embedding der Nutzereingabe
+    # Embedding der Nutzereingabe berechnen
     user_embedding = model.encode(user_input, convert_to_tensor=True)
 
     results = []
@@ -156,9 +156,6 @@ def search_solutions():
 
 @app.route("/categories", methods=["GET"])
 def get_categories_data():
-    """
-    Liefert die Anzahl der Kundenreferenzen pro Kategorie als JSON.
-    """
     # Zähle die Anzahl der Referenzen pro Kategorie
     pipeline = [
         {"$unwind": "$categories"},
@@ -171,6 +168,18 @@ def get_categories_data():
     # Formatieren für das Frontend
     result = [{"category": item["_id"], "count": item["count"]} for item in data]
     return jsonify(result)
+
+
+@app.route("/rescrap", methods=["GET"])
+def rescrap_data():
+    print("Rescrap-Route wurde aufgerufen")
+    scrap_product_data()
+    scrap_customer_data()
+    generate_embeddings_for_field("products", "description")
+    generate_embeddings_for_field("customers", "challenges")
+    save_challenge_categories_to_db()
+    return '', 200
+
 
 def is_db_initialized(collection_name):
     return db[collection_name].estimated_document_count() > 0

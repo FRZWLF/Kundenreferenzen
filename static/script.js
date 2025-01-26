@@ -29,6 +29,8 @@ const rangeInput = document.getElementById('similarity-filter');
 const rangeDisplay = document.getElementById('range-display');
 const form = document.getElementById("search")
 const filter = document.getElementById("filter")
+const rescrapBtn = document.getElementById("rescrap-btn")
+const notification = document.getElementById("notification")
 
 
 function showTab(tabId) {
@@ -171,9 +173,33 @@ form.addEventListener("submit", async (event) => {
     const { selectedCategory, selectedSimilarity } = getFilterValues();
 
     fetchAndDisplayReferences(challenge, selectedCategory, selectedSimilarity);
-    fetchAndDisplaySolutions(challenge)
-    showTab('results')
+    fetchAndDisplaySolutions(challenge);
+    showTab('results');
 });
+
+
+rescrapBtn.addEventListener("click", async () => {
+    try {
+        rescrapBtn.classList.add("running");
+        const response = await fetch("http://127.0.0.1:5000/rescrap");
+
+        if (response.ok) {
+            rescrapBtn.classList.remove("running");
+
+            notification.classList.add("visible");
+
+            setTimeout(() => {
+                notification.classList.remove("visible")
+            }, 5000);
+        } else {
+            throw new Error("Fehler beim scrappen.");
+        }
+    } catch (error) {
+        console.error(error);
+    } finally {
+        rescrapBtn.classList.remove("running");
+    }
+})
 
 
 async function fetchCategoryData() {
