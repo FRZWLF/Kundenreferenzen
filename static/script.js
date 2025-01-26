@@ -61,7 +61,7 @@ function resetFilters() {
     document.getElementById('similarity-filter').value = 0.35;
     document.getElementById('range-display').textContent = parseFloat(0.35).toFixed(2);
     const challenge = document.getElementById("challenge").value;
-    document.getElementById('references').focus()
+    showTab('results')
 
     if (!challenge) {
         return;
