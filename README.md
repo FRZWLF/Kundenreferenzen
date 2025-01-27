@@ -27,6 +27,7 @@ Dieses Projekt umfasst **Daten-Scraping**, **semantische Analyse** und eine **be
 
 ## Anforderungen
 - **Python-Version**: Python 3.12
+- **Anaconda**
 - **Datenbank**: MongoDB Community Server [Download MongoDB](https://www.mongodb.com/try/download/community)
 
   - **Wichtig:** MongoDB braucht einen **data-Ordner**. Erstelle einen Ordner an der Stelle, wo MongoDB Dateien gespeichert werden sollen.
