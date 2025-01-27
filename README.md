@@ -70,3 +70,5 @@ ___
 ## TO-DO
 - **Suche und Empfehlung verbessern** (z.b. durch besser aufbereitete Ausgangsdaten)
 - **Oberfläche anpassen:** Weitere Details und zusätzliche Interaktionsmöglichkeiten integrieren.
+- **Variablen und Bezeichner vereinheitlichen:** Variablennamen und Bezeichner im Frontend und Backend an entsprechende Vorgaben anpassen
+- **Frontend:** Erstellung von Variablen und Klassen für wiederholenden CSS-Code
