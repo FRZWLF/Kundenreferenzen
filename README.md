@@ -59,6 +59,7 @@ pip install -r requirements.txt
 ./mongod --dbpath=/path/to/data/directory
 ```
 MongoDB läuft standardmäßig unter: mongodb://localhost:27017/
+
 5. **Flask-Anwendung starten:**
 ```bash
 python main.py
